@@ -1,3 +1,4 @@
+import UsersComponent from '../Components/UsersComponent';
 import ChartPurchase from '../charts/purchaseChart';
 import ChartSells from '../charts/sellsChart';
 import ChartUser from '../charts/usersChart';
@@ -53,6 +54,7 @@ export default () => {
                     </div>
                 </section>
             </div>
+            <UsersComponent />
         </div>
     )
 }

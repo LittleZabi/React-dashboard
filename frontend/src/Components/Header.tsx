@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react/dist/iconify.js"
+import { DarkThemeToggle } from "flowbite-react"
 
 export default () => {
     return <header className="flex">
@@ -9,6 +10,9 @@ export default () => {
             </button>
         </div>
         <div className="flex justify-center items-center">
+            <div className="mx-1">
+                <DarkThemeToggle />
+            </div>
             <div className="mx-1">
                 <Icon icon="eos-icons:rotating-gear" className="text-2xl" />
             </div>

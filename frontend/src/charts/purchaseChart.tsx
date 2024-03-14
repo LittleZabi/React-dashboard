@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import HighchartsReact from 'highcharts-react-official';
 import Highcharts from 'highcharts/highstock';
-import { calculateTickPositions, prepareVisitorsByDay, prepareUsersPerMonth, prepareByDay } from '../utilities/utils';
+import { prepareByDay } from '../utilities/utils';
 
 const ChartPurchase = () => {
     const [seriesData, setSeriesData]: any = useState([]);

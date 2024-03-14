@@ -1,8 +1,9 @@
-import { DataTypes, Sequelize } from "sequelize";
-import { sequelize } from "./database.js";
-import bcrypt from 'bcryptjs'
+const Sequelize = require('sequelize');
+const DataTypes = Sequelize.DataTypes;
+const { sequelize } = require("./database.js");
+const bcrypt = require('bcryptjs');
 
-export const User = sequelize.define('User', {
+const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -33,12 +34,30 @@ export const User = sequelize.define('User', {
       this.setDataValue('password', hash);
     }
   },
+  asAdmin: { type: DataTypes.BOOLEAN, default: false },
+  sellings: {
+    type: DataTypes.INTEGER,
+    default: 0
+  },
+  purchases: {
+    type: DataTypes.INTEGER,
+    default: 0
+  },
 });
-export const Materials = sequelize.define('Materials', {
+const Materials = sequelize.define('Materials', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
+  },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: User,
+      key: 'id'
+    },
+    field: 'user_id'
   },
   name: {
     type: DataTypes.STRING(255),
@@ -47,10 +66,14 @@ export const Materials = sequelize.define('Materials', {
   description: {
     type: DataTypes.TEXT
   },
-  unitPrice: {
+  price: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
-    field: 'unit_price'
+    field: 'price'
+  },
+  quantity: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -66,30 +89,20 @@ export const Materials = sequelize.define('Materials', {
     field: 'updated_at'
   }
 });
-
-export const Purchases = sequelize.define('Purchases', {
+Materials.belongsTo(Materials, { as: 'parent' });
+Materials.hasMany(Materials, { as: 'children', foreignKey: 'parentId' });
+Materials.beforeCreate((material, options) => {
+  if (!material.hasOwnProperty('parentId')) {
+    material.parentId = null;
+  }
+});
+User.hasMany(Materials, { foreignKey: 'user_id' }); // A user can have many materials
+Materials.belongsTo(User, { foreignKey: 'user_id' }); // A material belongs to one user
+const Purchases = sequelize.define('Purchases', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
-  },
-  materialId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Materials,
-      key: 'id'
-    },
-    field: 'material_id'
-  },
-  userId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: User,
-      key: 'id'
-    },
-    field: 'user_id'
   },
   quantity: {
     type: DataTypes.INTEGER,
@@ -100,28 +113,13 @@ export const Purchases = sequelize.define('Purchases', {
     allowNull: false,
     field: 'purchase_price'
   },
-  purchaseDate: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: Sequelize.NOW,
-    field: 'purchase_date'
-  }
 });
 
-export const Sells = sequelize.define('Sells', {
+const Sells = sequelize.define('Sells', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
-  },
-  materialId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Materials,
-      key: 'id'
-    },
-    field: 'material_id'
   },
   quantity: {
     type: DataTypes.INTEGER,
@@ -131,15 +129,9 @@ export const Sells = sequelize.define('Sells', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   },
-
-  soldDate: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: Sequelize.NOW
-  }
 });
 
-export const Visitor = sequelize.define('Visitor', {
+const Visitor = sequelize.define('Visitor', {
   id: {
     type: Sequelize.INTEGER,
     primaryKey: true,
@@ -160,9 +152,11 @@ export const Visitor = sequelize.define('Visitor', {
 });
 
 
+Sells.belongsTo(Materials); // A sell belongs to one material 
 Purchases.belongsTo(Materials);
 Purchases.belongsTo(User);
 Sells.belongsTo(Materials);
+Sells.belongsTo(User);
 
 (async () => {
   try {
@@ -172,3 +166,4 @@ Sells.belongsTo(Materials);
   } catch (e) { console.log('eeror whiel sycncing...', e) }
 })()
 
+module.exports = { User, Materials, Purchases, Sells, Visitor };

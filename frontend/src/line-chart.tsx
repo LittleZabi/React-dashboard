@@ -68,7 +68,7 @@ const ChartComponent = () => {
                         y2: 1
                     },
                     stops: [
-                        [0, Highcharts.getOptions().colors[0]],
+                        [0, '#000'],
                         [1, 'rgba(0, 0, 255, 0)'],
                     ]
                 },
