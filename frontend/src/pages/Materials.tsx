@@ -48,6 +48,7 @@ export default () => {
             })
     }
     return <div className="mt-6 user-view">
+        <h1 className="text-2xl my-3 font-bold">List of Materials</h1>
         <button onClick={() => setModal({ newMaterial: true })} className="bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
             <span className="mx-1">
                 <Icon icon="ic:twotone-plus" /></span>
@@ -105,6 +106,9 @@ export default () => {
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
                         <th scope="col" className="px-6 py-3">
+                            #
+                        </th>
+                        <th scope="col" className="px-6 py-3">
                             name
                         </th>
                         <th scope="col" className="px-6 py-3">
@@ -128,10 +132,13 @@ export default () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {loading === false && allMaterials.map((item: any) => {
+                    {loading === false && allMaterials.map((item: any, i: number) => {
                         return (
                             <tr key={item.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
 
+                                <td className="px-6 py-4">
+                                    {++i}
+                                </td>
                                 <td className="px-6 py-4">
                                     {item.name}
                                 </td>

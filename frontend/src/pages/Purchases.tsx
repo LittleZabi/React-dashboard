@@ -6,16 +6,22 @@ import { BACKEND_API } from "../utilities/variables"
 import { getRandomColor, life, setUserCharName } from "../utilities/globals"
 import LoadingSkeleton from "../Components/LoadingSkeleton"
 import ConfirmationModel from "../Modals/confirmationModel"
-import Materials from "../Modals/materials"
+import Sell from "../Modals/sell"
+import circularJSON from 'circular-json'; // Import the library
+import Purchase from "../Modals/purchase"
 
 export default () => {
     const { modal, setModal, setAlert, User } = useContext(StoreContext)
-    const [allMaterials, setAllMaterials] = useState([]);
+    const [allPurchases, setAllPurchases] = useState([]);
+    const [materials, setMaterials] = useState([])
     const [loading, setLoading] = useState(true)
-    const [material, setMaterial]: any = useState({})
+    const [purchases, setPurchases]: any = useState({})
     const getData = async () => {
-        await axios.get(BACKEND_API + `/api/materials/all/${User.id}/${User.asAdmin}`).then((res) => {
-            setAllMaterials(res.data);
+        await axios.get(BACKEND_API + `/api/purchases/all/${User.id}/${User.asAdmin}`).then((res) => {
+            let data = res.data
+            setAllPurchases(data.items);
+            let p = circularJSON.parse(data.materials)
+            setMaterials(p)
             setLoading(false)
         })
             .catch((error) => {
@@ -26,17 +32,17 @@ export default () => {
         getData()
     }, []);
     const editHandler = (item: any) => {
-        setModal({ newMaterial: true, material: item })
+        setModal({ newPurchase: true, purchase: item })
     }
     const remUser = (item: any) => {
-        setMaterial(item)
+        setPurchases(item)
         setModal({ confirmation: true, item })
     }
     const deleteMat = async () => {
         setAlert({ message: false })
         setLoading(true)
         setModal({ confirmation: false })
-        await axios.delete(BACKEND_API + `/api/materials/${material.id}/delete`).then(res => {
+        await axios.delete(BACKEND_API + `/api/purchases/${purchases.id}/delete`).then(res => {
             setAlert({ message: res.data.message, variant: 'success' })
             setLoading(false)
             getData()
@@ -48,17 +54,18 @@ export default () => {
             })
     }
     return <div className="mt-6 user-view">
-        <button onClick={() => setModal({ newMaterial: true })} className="bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
+        <h1 className="text-2xl my-3 font-bold">List of Purchases</h1>
+        <button onClick={() => setModal({ newPurchase: true })} className="bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
             <span className="mx-1">
                 <Icon icon="ic:twotone-plus" /></span>
-            <span>New Material</span>
+            <span>New Purchase</span>
         </button>
-        {modal.newMaterial && <Materials title={"Add new Material"} />}
+        {modal.newPurchase && <Purchase materials={materials} title={"Add new purchase"} />}
         {modal.confirmation &&
             <ConfirmationModel options={{
                 type: 'confirm',
                 modal_title: "Confirm to delete",
-                title: `Are you sure you want to delete this (${material.name}) Material? All selling and purchased records will be removed!`,
+                title: `Are you sure you want to purchase record?`,
                 buttons: [
                     { title: "Yes, I'm sure", cb: deleteMat },
                     { title: "No, cancel", cb: () => setModal({ enabled: false }), type: 'close' }]
@@ -76,7 +83,7 @@ export default () => {
                             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
                         </svg>
                     </button>
-                    <div id="dropdownRadio" className="z-10 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600" data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style={{ position: 'absolute', inset: 'auto auto 0px 0px', margin: 0, transform: 'translate3d(522.5px, 3847.5px, 0px)' }}>
+                    <div id="dropdownRadio" className="hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600" data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style={{ position: 'absolute', inset: 'auto auto 0px 0px', margin: 0, transform: 'translate3d(522.5px, 3847.5px, 0px)' }}>
                         <ul className="p-3 space-y-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownRadioButton">
                             <li>
                                 <div className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -105,22 +112,22 @@ export default () => {
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
                         <th scope="col" className="px-6 py-3">
-                            name
+                            id
                         </th>
                         <th scope="col" className="px-6 py-3">
-                            Description
+                            Material
                         </th>
                         <th scope="col" className="px-6 py-3">
                             Price
                         </th>
                         <th scope="col" className="px-6 py-3">
-                            Parent
+                            Quantity
+                        </th>
+                        <th scope="col" className="px-6 py-3">
+                            Purchased
                         </th>
                         <th scope="col" className="px-6 py-3">
                             User
-                        </th>
-                        <th scope="col" className="px-6 py-3">
-                            Created At
                         </th>
                         <th scope="col" className="px-6 py-3">
                             Action
@@ -128,21 +135,20 @@ export default () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {loading === false && allMaterials.map((item: any) => {
+                    {loading === false && allPurchases.map((item: any) => {
                         return (
                             <tr key={item.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-
                                 <td className="px-6 py-4">
-                                    {item.name}
+                                    {item.id}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {item.description}
+                                    {item.Material.name}
                                 </td>
                                 <td className="px-6 py-4">
-                                    ${item.price}
+                                    ${item.purchasePrice}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {item.parent ? item.parent.name : 'Parent'}
+                                    {item.quantity}
                                 </td>
                                 <th scope="row" className="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white">
                                     {item.avatar != '' ?

@@ -17,10 +17,229 @@ app.use(cors({
     origin: 'http://localhost:5173'
 }));
 
+app.get('/api', (req, res) => {
+    res.send('working....')
+})
 
 app.use(bodyParser.urlencoded({ extended: true }))
 
 app.use(bodyParser.json())
+
+app.get('/api/search/materials', async (req, res) => {
+    const { query } = req.query;
+    try {
+        const materials = await Materials.findAll({
+            // where: Sequelize.where(
+            //     Sequelize.fn('lower', Sequelize.col('id')),
+            //     'like',
+            //     Sequelize.fn('lower', `%${query}%`)
+            // ).or(Sequelize.where(
+            //     Sequelize.fn('lower', Sequelize.col('name')),
+            //     'like',
+            //     Sequelize.fn('lower', `%${query}%`)
+            // )),
+            where: {
+                [Sequelize.Op.or]: [
+                    { id: query },
+                    { name: query },
+                ],
+            },
+            attributes: ['id', 'name', 'createdAt', 'price', 'quantity'],
+        });
+        res.json(materials);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error searching materials' });
+    }
+});
+
+app.post('/api/purchases/new', async (req, res) => {
+    try {
+        const { userId, purchasePrice, quantity, MaterialId, id, editMode } = req.body;
+        if (!userId || !purchasePrice || !quantity || !MaterialId) {
+            res.status(400).json({ message: 'Missing required fields' });
+            return;
+        }
+        if (id && editMode) {
+            const exist = await Purchases.findByPk(id);
+            if (!exist) {
+                return res.status(404).json({ message: 'Purchase record not found' });
+            }
+            let mat = await Materials.findByPk(MaterialId)
+            let matC = mat.totalPurchases - exist.quantity
+            matC += quantity
+            await mat.update({
+                totalPurchases: matC
+            })
+            // update users to price 
+            let usr = await User.findByPk(userId)
+            let usrC = usr.purchases - Number(exist.purchasePrice)
+            usrC += Number(purchasePrice)
+            await usr.update({
+                purchases: usrC
+            })
+            await exist.update({
+                purchasePrice: Number(purchasePrice),
+                quantity,
+                MaterialId
+            });
+            res.json({ message: 'Purchase record updated successfully', material: exist });
+        } else {
+            const sell = await Purchases.create({
+                userId,
+                purchasePrice,
+                quantity,
+                MaterialId,
+            });
+            let mat = await Materials.findByPk(MaterialId)
+            let matC = mat.totalPurchases + quantity
+            await mat.update({
+                totalPurchases: matC
+            })
+            // update users to price 
+            let usr = await User.findByPk(userId)
+            let usrC = usr.purchases + purchasePrice
+            await usr.update({
+                purchases: usrC
+            })
+            res.status(201).json(sell);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error saving sell' });
+    }
+});
+app.delete('/api/purchases/:id/delete', async (req, res) => {
+    try {
+        const _id = req.params.id;
+        const deleted = await Purchases.destroy({
+            where: { id: _id },
+        });
+        if (deleted === 0) {
+            return res.status(404).json({ message: 'Purchase record not found' });
+        }
+        res.json({ message: 'Purchase record deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error deleting purchase' });
+    }
+});
+app.post('/api/sells/new', async (req, res) => {
+    try {
+        const { userId, sellingPrice, quantity, MaterialId, id, editMode } = req.body;
+        if (!userId || !sellingPrice || !quantity || !MaterialId) {
+            res.status(400).json({ message: 'Missing required fields' });
+            return;
+        }
+        if (id && editMode) {
+            const exist = await Sells.findByPk(id);
+            if (!exist) {
+                return res.status(404).json({ message: 'Sell record not found' });
+            }
+
+            let mat = await Materials.findByPk(MaterialId)
+            let matC = mat.totalSells - exist.quantity
+            matC += quantity
+            await mat.update({
+                totalSells: matC
+            })
+            // user 
+            let usr = await User.findByPk(userId)
+            let exs = Number(exist.sellingPrice)
+            let usrC = usr.sellings - exs
+            usrC += Number(sellingPrice)
+            await usr.update({
+                sellings: usrC
+            })
+            await exist.update({
+                sellingPrice: Number(sellingPrice),
+                quantity,
+                MaterialId
+            });
+            res.json({ message: 'Sell record updated successfully', material: exist });
+        } else {
+
+            const sell = await Sells.create({
+                userId,
+                sellingPrice: Number(sellingPrice),
+                quantity,
+                MaterialId,
+            });
+            let usr = await User.findByPk(userId)
+            let usrC = usr.sellings + Number(sellingPrice)
+            await usr.update({
+                sellings: usrC
+            })
+            let mat = await Materials.findByPk(MaterialId)
+            let matC = mat.totalSells + quantity
+            await mat.update({
+                totalSells: matC
+            })
+            res.status(201).json(sell);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error saving sell' });
+    }
+});
+
+const getMaterials = async () => {
+    const [parentMaterials, materialsWithChildren] = await Promise.all([
+        Materials.findAll({
+            where: { parentId: null },
+            ttributes: ['name', 'id']
+        }),
+        Materials.findAll({
+            include: {
+                model: Materials,
+                as: 'children',
+                where: { parent_id: Sequelize.col('Materials.id') },
+                include: [
+                    { model: Materials, as: 'children', attributes: ['id', 'name'] },
+                ],
+                attributes: ['id', 'name']
+            },
+            where: { parentId: null }
+            , attributes: ['id', 'name']
+        }),
+    ]);
+    const allMaterials = parentMaterials.reduce((acc, parentMaterial) => {
+        const existingMaterial = materialsWithChildren.find(m => m.id === parentMaterial.id);
+        if (existingMaterial) {
+            acc.push({ ...parentMaterial.toJSON(), ...existingMaterial.toJSON() }); // Combine properties
+        } else {
+            acc.push(parentMaterial.toJSON());
+        }
+        return acc;
+    }, []);
+    return allMaterials
+}
+
+app.get('/api/purchases/all/:id/:asAdmin', async (req, res) => {
+    try {
+        const items = await Purchases.findAll({
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'fullname', 'email', 'avatar']
+                },
+                {
+                    model: Materials,
+                    attributes: ['name'],
+                },
+            ],
+            where: req.params.asAdmin === 'true' || req.params.asAdmin === true ? {} : {
+                user_id: req.params.id
+            },
+            order: [['id', 'DESC']],
+            limit: 30,
+        });
+        res.send({ items, materials: circularJSON.stringify(await getMaterials()) })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+});
 
 app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
     try {
@@ -32,7 +251,6 @@ app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
                 },
                 {
                     model: Materials,
-                    // as: 'material',
                     attributes: ['name'],
                 },
             ],
@@ -41,60 +259,28 @@ app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
             },
             order: [['id', 'DESC']],
             limit: 30,
-            attributes: ['id', 'sellingPrice', 'quantity', 'createdAt']
         });
-        // const materials = await Materials.findAll({
-        //     include: {
-        //         model: Materials, // Include child materials
-        //         as: 'children',
-        //         where: { parent_id: Sequelize.col('Materials.id') }, // Self-join condition
-        //         include: [ // Recursive include for grandchild materials (optional)
-        //             { model: Materials, as: 'children', attributes: ['id', 'name'] }, // Only fetch ID and name for grandchildren
-        //         ],
-        //     },
-
-        //     where: { parentId: null },
-        //     attributes: ['id', 'name'],
-        // });
-        const [parentMaterials, materialsWithChildren] = await Promise.all([
-            Materials.findAll({
-                where: { parentId: null },
-                ttributes: ['name', 'id']
-            }), // Get parent materials
-            Materials.findAll({ // Get materials with children
-                include: {
-                    model: Materials,
-                    as: 'children',
-                    where: { parent_id: Sequelize.col('Materials.id') },
-                    include: [
-                        { model: Materials, as: 'children', attributes: ['id', 'name'] },
-                    ],
-                    attributes: ['id', 'name']
-                },
-                where: { parentId: null }
-                , attributes: ['id', 'name']
-            }),
-        ]);
-        // const materials = [...new Set(parentMaterials.map(m => m.id))].map(id => parentMaterials.find(m => m.id === id));
-        const allMaterials = parentMaterials.reduce((acc, parentMaterial) => {
-            const existingMaterial = materialsWithChildren.find(m => m.id === parentMaterial.id);
-            if (existingMaterial) {
-                acc.push({ ...parentMaterial.toJSON(), ...existingMaterial.toJSON() }); // Combine properties
-            } else {
-                acc.push(parentMaterial.toJSON());
-            }
-            return acc;
-        }, []);
-        // res.json({ sells, materials: allMaterials });
-        res.send({ sells, materials: circularJSON.stringify(allMaterials) })
-
+        res.send({ sells, materials: circularJSON.stringify(await getMaterials()) })
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching users' });
     }
 });
-
-
+app.delete('/api/sells/:id/delete', async (req, res) => {
+    try {
+        const sellId = req.params.id;
+        const deletedSells = await Sells.destroy({
+            where: { id: sellId },
+        });
+        if (deletedSells === 0) {
+            return res.status(404).json({ message: 'Sell record  not found' });
+        }
+        res.json({ message: 'Sell record deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error deleting sell' });
+    }
+});
 app.delete('/api/materials/:id/delete', async (req, res) => {
     try {
         const materialId = req.params.id;
@@ -263,7 +449,7 @@ app.get('/api/users/all', async (req, res) => {
         const allUsers = await User.findAll({
             order: [['id', 'DESC']], // Assuming 'id' is the primary key
             limit: 30,
-            attributes: ['id', 'username', 'fullname', 'email', 'avatar', 'address', 'sellings', 'purchases', 'createdAt', 'updatedAt'],
+            attributes: ['id', 'asAdmin', 'username', 'fullname', 'email', 'avatar', 'address', 'sellings', 'purchases', 'createdAt', 'updatedAt'],
         });
         res.json(allUsers);
     } catch (error) {
@@ -331,7 +517,7 @@ app.post('/api/new-user', upload.single('avatar'), async (req, res) => {
 
 app.get('/count/visitors', async (req, res) => {
     const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() - 30)
+    thresholdDate.setDate(thresholdDate.getDate() - 62)
     const visitors = await Visitor.findAll({
         where: {
             createdAt: {
@@ -345,7 +531,7 @@ app.get('/count/visitors', async (req, res) => {
 })
 app.get('/count/purchases', async (req, res) => {
     const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() - 30);
+    thresholdDate.setDate(thresholdDate.getDate() - 62);
     const sells = await Purchases.findAll({
         where: {
             createdAt: {
@@ -359,7 +545,7 @@ app.get('/count/purchases', async (req, res) => {
 })
 app.get('/count/sells', async (req, res) => {
     const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() - 365);
+    thresholdDate.setDate(thresholdDate.getDate() - 62);
     const sells = await Sells.findAll({
         where: {
             createdAt: {
@@ -371,9 +557,36 @@ app.get('/count/sells', async (req, res) => {
     });
     res.send(sells)
 })
+app.get('/count/materials/top-materials', async (req, res) => {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    const sells = await Materials.findAll({
+        attributes: ['name', 'totalSells'],
+        order: [[Sequelize.col('totalSells'), 'DESC']],
+        limit: 10,
+        where: {
+            createdAt: {
+                [Sequelize.Op.gte]: lastMonth,
+                [Sequelize.Op.lt]: today,
+            },
+        },
+    });
+    const purchased = await Materials.findAll({
+        attributes: ['name', 'totalPurchases'],
+        order: [[Sequelize.col('totalPurchases'), 'DESC']],
+        limit: 10,
+        where: {
+            createdAt: {
+                [Sequelize.Op.gte]: lastMonth,
+                [Sequelize.Op.lt]: today,
+            },
+        },
+    });
+    res.send({ sells, purchased })
+})
 app.get('/count/user', async (req, res) => {
     const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() - 772);
+    thresholdDate.setDate(thresholdDate.getDate() - 62);
     const users = await User.findAll({
         where: {
             createdAt: {
@@ -386,20 +599,4 @@ app.get('/count/user', async (req, res) => {
     res.send(users)
 })
 
-
 app.listen(process.env.PORT, () => console.log(`Listening on port http://127.0.0.1:${process.env.PORT}`))
-// Create a new user
-// const newUser = await User.create({ name: 'John Doe', email: 'john.doe@example.com' });
-
-// // Find all users
-// const users = await User.findAll();
-
-// // Find a user by ID
-// const user = await User.findByPk(1);
-
-// // Update a user
-// user.email = 'updated@email.com';
-// await user.save();
-
-// // Delete a user
-// await user.destroy();

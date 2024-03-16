@@ -3,21 +3,12 @@ import HighchartsReact from 'highcharts-react-official';
 import Highcharts from 'highcharts/highstock';
 import { prepareUsersPerDay } from '../utilities/utils';
 
-const ChartSells = () => {
+const ChartSells = ({ sells }: any) => {
     const [seriesData, setSeriesData]: any = useState([]);
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch('http://localhost:3000/count/sells');
-                const data = await response.json();
-                let c = prepareUsersPerDay(data)
-                setSeriesData(c)
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        };
-        fetchData();
-    }, []);
+        let c = prepareUsersPerDay(sells)
+        setSeriesData(c)
+    }, [sells]);
 
     const chartOptions: any =
     {

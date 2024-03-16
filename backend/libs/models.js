@@ -75,6 +75,14 @@ const Materials = sequelize.define('Materials', {
     type: DataTypes.INTEGER,
     defaultValue: 1
   },
+  totalSells: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  totalPurchases: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
   createdAt: {
     type: DataTypes.DATE,
     allowNull: false,
@@ -93,7 +101,8 @@ Materials.belongsTo(Materials, { as: 'parent' });
 Materials.hasMany(Materials, { as: 'children', foreignKey: 'parentId' });
 Materials.beforeCreate((material, options) => {
   if (!material.hasOwnProperty('parentId')) {
-    material.parentId = null;
+    if (!material.parentId)
+      material.parentId = null;
   }
 });
 User.hasMany(Materials, { foreignKey: 'user_id' }); // A user can have many materials
@@ -151,12 +160,11 @@ const Visitor = sequelize.define('Visitor', {
   },
 });
 
-
 Sells.belongsTo(Materials); // A sell belongs to one material 
 Purchases.belongsTo(Materials);
-Purchases.belongsTo(User);
+Purchases.belongsTo(User, { foreignKey: 'userId' });
 Sells.belongsTo(Materials);
-Sells.belongsTo(User);
+Sells.belongsTo(User, { foreignKey: 'userId' });
 
 (async () => {
   try {
