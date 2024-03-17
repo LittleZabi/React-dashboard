@@ -51,7 +51,7 @@ export default () => {
     console.log(User)
     return (
         User.asAdmin ? <div className="mt-6 user-view">
-            <button onClick={() => setModal({ newUser: true })} className="bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
+            <button onClick={() => setModal({ newUser: true })} className="bg-blue-700 dark:bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center ">
                 <span className="mx-1">
                     <Icon icon="ic:twotone-plus" /></span>
                 <span>New User</span>

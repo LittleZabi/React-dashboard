@@ -55,7 +55,7 @@ export default () => {
     }
     return <div className="mt-6 user-view">
         <h1 className="text-2xl my-3 font-bold">List of Sells</h1>
-        <button onClick={() => setModal({ newSell: true })} className="bg-gray-700 focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
+        <button onClick={() => setModal({ newSell: true })} className="bg-blue-700 dark:bg-gray-700  focus:ring-4 dark:focus:ring-blue-900 focus:ring-blue-300 hover:bg-gray-900 text-white py-2 px-6 rounded inline-flex items-center">
             <span className="mx-1">
                 <Icon icon="ic:twotone-plus" /></span>
             <span>New Sell</span>

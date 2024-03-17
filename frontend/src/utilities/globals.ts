@@ -172,7 +172,51 @@ export const staticBody = (visibility: Boolean) => {
 		else document.querySelector('body')?.classList.remove('modal-open');
 	}
 };
-
+export const Cookies: {
+	set: (
+		name: string,
+		value: string | object,
+		options?: {
+			expires?: number | Date;
+			maxAge?: number;
+			path?: string;
+			domain?: string;
+			secure?: boolean;
+			sameSite?: string;
+		}
+	) => void,
+	get: (name: string) => string | null,
+	delete: (name: string) => void
+} = {
+	set: (name, value, options) => {
+		if (typeof value === 'object') value = JSON.stringify(value)
+		options = options ? options : {};
+		if (options?.expires) options.expires = new Date(Date.now() + 86400000 * Number(options.expires));
+		options.path = options.path ? options.path : '/';
+		options.secure = options.secure ? options.secure : PUBLIC_ENV === 'dev' ? false : true;
+		let cookies = `${name}=${value}`;
+		for (const option in options) {
+			if (options.hasOwnProperty(option)) {
+				if (option === 'maxAge') cookies += `;max-age=${options[option]}`;
+				// @ts-ignore
+				else cookies += `;${option}=${options[option]}`;
+			}
+		}
+		document.cookie = cookies;
+	},
+	get: (name) => {
+		let cookies = document.cookie.split(';');
+		let value = null;
+		for (const c of cookies) {
+			let [n, v] = c.split('=');
+			if (n.trim() === name) return decodeURIComponent(v);
+		}
+		return value;
+	},
+	delete: (name) => {
+		document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+	}
+}
 export const setCookies: (
 	name: string,
 	value: string,

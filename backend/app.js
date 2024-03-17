@@ -371,13 +371,15 @@ app.post('/api/login', async (req, res) => {
                     { email: usernameOrEmail },
                 ],
             },
-            attributes: ['id', 'address', 'asAdmin', 'avatar', 'createdAt', 'email', 'fullname', 'purchases', 'sellings', 'username']
+            attributes: ['id', 'address', 'asAdmin', 'avatar', 'createdAt', 'email', 'fullname', 'password', 'purchases', 'sellings', 'username']
         });
         if (!user) return res.status(401).json({ message: 'Invalid username/email or password' });
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid username/email or password' });
         }
+        delete user.password;
+        console.log(user)
         res.json({ message: 'Login successful', user });
     } catch (error) {
         console.error(error);

@@ -37,7 +37,7 @@ export default ({ materials, accessor, chartType, label }: any) => {
             lineWidth: 1,
             gridLineWidth: 1,
             minorGridLineWidth: 1,
-            gridLineColor: '#7c7c7c63',
+            gridLineColor: '#cfcfcf10',
             labels: {
                 enabled: true,
                 overflow: 'ellipsis',
@@ -58,7 +58,7 @@ export default ({ materials, accessor, chartType, label }: any) => {
         },
         yAxis: {
             gridLineWidth: 0.3,
-            gridLineColor: '#7c7c7c63',
+            gridLineColor: '#cfcfcf',
             labels: {
                 style: {
                     color: '#fff',
@@ -83,7 +83,7 @@ export default ({ materials, accessor, chartType, label }: any) => {
             name: label,
             data: seriesData[1],
             color: '#ff7a00',
-            borderColor: '#8c05ff',
+            borderColor: '#ff9500',
             borderWidth: 2,
         }],
         accessibility: {

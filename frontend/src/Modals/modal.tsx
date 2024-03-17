@@ -1,7 +1,5 @@
 
-'use client';
-
-import { Button, Modal } from 'flowbite-react';
+import { Modal } from 'flowbite-react';
 import { useContext, useState } from 'react';
 import StoreContext from '../context/store';
 

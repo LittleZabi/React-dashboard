@@ -18,7 +18,7 @@ const ChartSells = ({ visitors }: any) => {
         chart: {
             type: 'spline',
             zoomType: 'x',
-            backgroundColor: '#26293c',
+            backgroundColor: '#00000000',
             style: {
                 color: '#fff',
                 height: 300,
@@ -36,20 +36,17 @@ const ChartSells = ({ visitors }: any) => {
             gridLineWidth: 0,
             minorGridLineWidth: 0,
             labels: {
-                style: {
-                    color: '#fff',
-                }
-            }
+                formatter: (e: any) => {
+                    return `<span style="color: #c0c0c0">${e.value}</span>`
+                },
+            },
         },
         yAxis: {
             gridLineWidth: 0.1,
             labels: {
-                // formatter: (e: any) => {
-                //     return e.value;
-                // },
-                style: {
-                    color: '#fff',
-                }
+                formatter: (e: any) => {
+                    return `<span style="color: #c0c0c0">${e.value}</span>`
+                },
             },
             title: {
                 text: null

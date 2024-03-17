@@ -204,29 +204,29 @@ export default () => {
                     </div>
                 </Card>
             </div>
-            <div className='full-chart'>
+            <div className='full-chart bg-white text-black dark:bg-gray-800 dark:text-gray-300'>
                 <ChartVisitors visitors={data.visitors} />
             </div>
             <div className=' flex mb-8 '>
                 <Card className='m-1 w-2/3'>
-                    <h1 className='text-gray-300 text-base font-medium'>Top materials sells</h1>
+                    <h1 className='text-gray-700 dark:text-white text-base font-medium'>Top materials sells</h1>
                     <div className='flex items-center -mt-3 mb-5'>
                         <Icon icon="solar:tag-price-bold" className="mr-2 text-3xl text-pink-500" />
-                        <span className='text-xl'>{numberFormatChart(totalSells, 0, undefined, ',')}</span>
+                        <span className='text-xl text-black dark:text-white'>{numberFormatChart(totalSells, 0, undefined, ',')}</span>
                     </div>
                     <TopSellsMatChart accessor={'totalSells'} label={'Sells'} chartType='column' materials={data.matSells} />
                 </Card>
                 <Card className='m-1 w-1/3'>
-                    <h1 className='text-gray-300 text-base font-medium'>Top materials sells</h1>
+                    <h1 className='text-gray-700 dark:text-white text-base font-medium'>Top materials sells</h1>
                     <div className='flex items-center -mt-3 mb-5'>
                         <Icon icon="solar:tag-price-bold" className="mr-2 text-3xl text-pink-500" />
-                        <span className='text-xl'>{numberFormatChart(totalSells, 0, undefined, ',')}</span>
+                        <span className='text-xl text-black dark:text-white'>{numberFormatChart(totalSells, 0, undefined, ',')}</span>
                     </div>
                     <TopSellsMatChart accessor={'totalPurchases'} chartType="spline" label={'Purchase'} materials={data.matPurchased} />
                 </Card>
             </div>
             <div className='flex flex-wrap super-con'>
-                <section className='m-1'>
+                <section className='m-1 bg-gray-100 shadow-md text-black dark:bg-gray-900 dark:text-white' >
                     <div className='chart' style={{ backgroundColor: '#217ae9' }}>
                         <ChartSells sells={data.sells} />
                     </div>
@@ -239,7 +239,7 @@ export default () => {
                         </p>
                     </div>
                 </section>
-                <section className='m-1'>
+                <section className='m-1 bg-gray-100 shadow-md text-black dark:bg-gray-900 dark:text-white'>
                     <div className='chart' style={{ backgroundColor: '#5bb25f' }}>
                         <ChartUser users={data.users} />
                     </div>
@@ -252,7 +252,7 @@ export default () => {
                         </p>
                     </div>
                 </section>
-                <section className='m-1'>
+                <section className='m-1 bg-gray-100 shadow-md text-black dark:bg-gray-900 dark:text-white'>
                     <div className='chart' style={{ backgroundColor: '#ff5622' }}>
                         <ChartPurchase purchases={data.purchases} />
                     </div>

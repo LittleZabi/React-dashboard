@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useContext, useEffect, useState } from "react";
 import StoreContext from "../context/store";
 import { BACKEND_API } from "../utilities/variables";
-import { Dropdown, Spinner } from "flowbite-react";
+import { Spinner } from "flowbite-react";
 import { life } from "../utilities/globals";
 
 export default ({ title }: any) => {

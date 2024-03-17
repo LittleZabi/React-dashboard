@@ -9,3 +9,6 @@ module.exports.sequelize = new Sequelize({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
 });
+// alzainmh_condb
+// 3@K[@8y_HclO
+// alzainmh_super
