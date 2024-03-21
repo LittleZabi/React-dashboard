@@ -3,7 +3,7 @@ const DataTypes = Sequelize.DataTypes;
 const { sequelize } = require("./database.js");
 const bcrypt = require('bcryptjs');
 
-const User = sequelize.define('User', {
+const User = sequelize.define('users', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -44,7 +44,7 @@ const User = sequelize.define('User', {
     default: 0
   },
 });
-const Materials = sequelize.define('Materials', {
+const Materials = sequelize.define('materials', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -107,7 +107,7 @@ Materials.beforeCreate((material, options) => {
 });
 User.hasMany(Materials, { foreignKey: 'user_id' }); // A user can have many materials
 Materials.belongsTo(User, { foreignKey: 'user_id' }); // A material belongs to one user
-const Purchases = sequelize.define('Purchases', {
+const Purchases = sequelize.define('purchases', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -124,7 +124,7 @@ const Purchases = sequelize.define('Purchases', {
   },
 });
 
-const Sells = sequelize.define('Sells', {
+const Sells = sequelize.define('sells', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -140,7 +140,7 @@ const Sells = sequelize.define('Sells', {
   },
 });
 
-const Visitor = sequelize.define('Visitor', {
+const Visitor = sequelize.define('visitor', {
   id: {
     type: Sequelize.INTEGER,
     primaryKey: true,
@@ -160,7 +160,7 @@ const Visitor = sequelize.define('Visitor', {
   },
 });
 
-Sells.belongsTo(Materials); // A sell belongs to one material 
+Sells.belongsTo(Materials, { foreignKey: 'materialId' });
 Purchases.belongsTo(Materials);
 Purchases.belongsTo(User, { foreignKey: 'userId' });
 Sells.belongsTo(Materials);

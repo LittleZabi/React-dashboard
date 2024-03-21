@@ -13,13 +13,7 @@ const circularJSON = require('circular-json');
 configDotenv()
 const app = express();
 
-app.use(cors({
-    origin: 'http://localhost:5173'
-}));
-
-app.get('/api', (req, res) => {
-    res.send('working....')
-})
+app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -183,24 +177,34 @@ app.post('/api/sells/new', async (req, res) => {
     }
 });
 
-const getMaterials = async () => {
+const getMaterials = async (query) => {
+    let pm = {
+        parentId: null
+    }
+    let mc = {
+        parent_id: Sequelize.col('Materials.id')
+    }
+    if (query.asAdmin === 'false' || query.asAdmin === false) {
+        pm.user_id = query.id
+        mc.user_id = query.id
+    }
     const [parentMaterials, materialsWithChildren] = await Promise.all([
         Materials.findAll({
-            where: { parentId: null },
+            where: pm,
             ttributes: ['name', 'id']
         }),
         Materials.findAll({
             include: {
                 model: Materials,
                 as: 'children',
-                where: { parent_id: Sequelize.col('Materials.id') },
+                where: mc,
                 include: [
-                    { model: Materials, as: 'children', attributes: ['id', 'name'] },
+                    { model: Materials, where: mc, as: 'children', attributes: ['id', 'name'] },
                 ],
                 attributes: ['id', 'name']
             },
-            where: { parentId: null }
-            , attributes: ['id', 'name']
+            where: pm,
+            attributes: ['id', 'name']
         }),
     ]);
     const allMaterials = parentMaterials.reduce((acc, parentMaterial) => {
@@ -229,12 +233,12 @@ app.get('/api/purchases/all/:id/:asAdmin', async (req, res) => {
                 },
             ],
             where: req.params.asAdmin === 'true' || req.params.asAdmin === true ? {} : {
-                user_id: req.params.id
+                userId: req.params.id
             },
             order: [['id', 'DESC']],
             limit: 30,
         });
-        res.send({ items, materials: circularJSON.stringify(await getMaterials()) })
+        res.send({ items, materials: circularJSON.stringify(await getMaterials(req.params)) })
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching users' });
@@ -252,18 +256,19 @@ app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
                 {
                     model: Materials,
                     attributes: ['name'],
+                    as: 'material'
                 },
             ],
             where: req.params.asAdmin === 'true' || req.params.asAdmin === true ? {} : {
-                user_id: req.params.id
+                userId: req.params.id
             },
             order: [['id', 'DESC']],
             limit: 30,
         });
-        res.send({ sells, materials: circularJSON.stringify(await getMaterials()) })
+        res.send({ sells, materials: circularJSON.stringify(await getMaterials(req.params)) })
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Error fetching users' });
+        res.status(500).json({ message: 'Error fetching Sells', error: error });
     }
 });
 app.delete('/api/sells/:id/delete', async (req, res) => {
@@ -333,7 +338,6 @@ app.post('/api/materials/new', async (req, res) => {
 });
 
 app.get('/api/materials/all/:id/:asAdmin', async (req, res) => {
-    console.log('() => ', req.params)
     try {
         const all = await Materials.findAll({
             include: [
@@ -371,7 +375,6 @@ app.post('/api/login', async (req, res) => {
                     { email: usernameOrEmail },
                 ],
             },
-            attributes: ['id', 'address', 'asAdmin', 'avatar', 'createdAt', 'email', 'fullname', 'password', 'purchases', 'sellings', 'username']
         });
         if (!user) return res.status(401).json({ message: 'Invalid username/email or password' });
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -379,8 +382,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid username/email or password' });
         }
         delete user.password;
-        console.log(user)
-        res.json({ message: 'Login successful', user });
+        res.json({ message: 'Login successful', user: { id: user.id, asAdmin: user.asAdmin, avatar: user.avatar, username: user.username, fullname: user.fullname, email: user.email } });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error logging in' });
@@ -517,7 +519,7 @@ app.post('/api/new-user', upload.single('avatar'), async (req, res) => {
     }
 })
 
-app.get('/count/visitors', async (req, res) => {
+app.get('/api/count/visitors', async (req, res) => {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - 62)
     const visitors = await Visitor.findAll({
@@ -531,70 +533,83 @@ app.get('/count/visitors', async (req, res) => {
     });
     res.send(visitors)
 })
-app.get('/count/purchases', async (req, res) => {
+app.get('/api/count/purchases', async (req, res) => {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - 62);
-    const sells = await Purchases.findAll({
-        where: {
-            createdAt: {
-                [Sequelize.Op.gte]: thresholdDate
-            }
+    let where = {
+        createdAt: {
+            [Sequelize.Op.gte]: thresholdDate
         },
+    }
+    if (req.query.asAdmin === 'false' || req.query.asAdmin === false) {
+        where.userId = req.query.id
+    }
+
+    const sells = await Purchases.findAll({
+        where,
         attributes: ['createdAt', 'purchasePrice'],
         order: [['createdAt', 'DESC']]
     });
     res.send(sells)
 })
-app.get('/count/sells', async (req, res) => {
+app.get('/api/count/sells', async (req, res) => {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - 62);
-    const sells = await Sells.findAll({
-        where: {
-            createdAt: {
-                [Sequelize.Op.gte]: thresholdDate
-            }
+    let where = {
+        createdAt: {
+            [Sequelize.Op.gte]: thresholdDate
         },
+    }
+    if (req.query.asAdmin === 'false' || req.query.asAdmin === false) {
+        where.userId = req.query.id
+    }
+    const sells = await Sells.findAll({
+        where,
         attributes: ['createdAt', 'sellingPrice'],
         order: [['createdAt', 'DESC']]
     });
     res.send(sells)
 })
-app.get('/count/materials/top-materials', async (req, res) => {
+app.get('/api/count/materials/top-materials', async (req, res) => {
     const today = new Date();
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    let where = {
+        createdAt: {
+            [Sequelize.Op.gte]: lastMonth,
+            [Sequelize.Op.lt]: today,
+        },
+    }
+    if (req.query.asAdmin === 'false' || req.query.asAdmin === false) {
+        where.user_id = req.query.id
+    }
     const sells = await Materials.findAll({
         attributes: ['name', 'totalSells'],
         order: [[Sequelize.col('totalSells'), 'DESC']],
         limit: 10,
-        where: {
-            createdAt: {
-                [Sequelize.Op.gte]: lastMonth,
-                [Sequelize.Op.lt]: today,
-            },
-        },
+        where
     });
     const purchased = await Materials.findAll({
         attributes: ['name', 'totalPurchases'],
         order: [[Sequelize.col('totalPurchases'), 'DESC']],
         limit: 10,
-        where: {
-            createdAt: {
-                [Sequelize.Op.gte]: lastMonth,
-                [Sequelize.Op.lt]: today,
-            },
-        },
+        where,
     });
     res.send({ sells, purchased })
 })
-app.get('/count/user', async (req, res) => {
+app.get('/api/count/user', async (req, res) => {
+
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - 62);
-    const users = await User.findAll({
-        where: {
-            createdAt: {
-                [Sequelize.Op.gte]: thresholdDate
-            }
+    let where = {
+        createdAt: {
+            [Sequelize.Op.gte]: thresholdDate
         },
+    }
+    if (req.params.asAdmin === 'false' || req.params.asAdmin === false) {
+        where.user_id = req.params.id
+    }
+    const users = await User.findAll({
+        where,
         attributes: ['createdAt'],
         order: [['createdAt', 'DESC']]
     });

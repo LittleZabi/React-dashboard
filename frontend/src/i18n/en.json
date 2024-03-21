@@ -1,0 +1,25 @@
+{
+    "headline": "Al Zain The Art of Construction",
+    "sub_heading": " Focuses on the customer's vision and the intersection of quality and design. Al Zain understands that your construction project is more than just materials; it's about realizing your unique vision. With our extensive selection of high-quality materials and commitment to design excellence, we can help you craft a space that is both beautiful and functional.",
+    "get_started": "Get started",
+    "nav_hm": "Home",
+    "nav_at": "About",
+    "nav_ct": "Contact",
+    "nav_log": "Login",
+    "logo": "Al-Zain",
+    "servicesCards": {
+        "t1": "Expert Material Selection",
+        "d1": "Our knowledgeable staff can assist you in selecting the perfect materials for your project, ensuring quality, compatibility, and adherence to budget.",
+        "t2": "Material Delivery",
+        "d2": "Focus on what matters most – we offer convenient and efficient delivery of your construction materials directly to your project site.",
+        "t3": "Material Takeoff & Estimation",
+        "d3": " Save time and resources with our professional material takeoff and estimation services. We'll meticulously calculate the exact amount of materials you'll need to avoid costly overages or delays.",
+        "t4": "Cutting & Fabrication Services",
+        "d4": "For specific project requirements, we provide cutting and fabrication services for various materials, ensuring precise measurements and reducing on-site waste."
+    },
+    "section3rd": {
+        "aText1": "Sign up to analyze your data into dashboard with beautiful charts",
+        "title": "Al Zain goes beyond just supplying materials.",
+        "sub_title": "Focus on what matters most – we offer convenient and efficient delivery of your construction materials directly to your project site."
+    }
+}
