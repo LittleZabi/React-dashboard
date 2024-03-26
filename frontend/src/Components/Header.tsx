@@ -25,10 +25,10 @@ export default () => {
                 <Navbar.Toggle />
             </div>
             <Navbar.Collapse>
-                <Navbar.Link className='mt-2' href="#" active>{t('nav_hm')}</Navbar.Link>
-                <Navbar.Link className='mt-2' href="#">{t('nav_at')}</Navbar.Link>
-                <Navbar.Link className='mt-2' href="#">{t('nav_ct')}</Navbar.Link>
-                <Navbar.Link className='mt-2' href="http://admin.alzainmhc.com">{t('nav_log')}</Navbar.Link>
+                <Navbar.Link className='mt-2' href="/" active>{t('nav_hm')}</Navbar.Link>
+                <Navbar.Link className='mt-2' href="#cards">{t('nav_at')}</Navbar.Link>
+                <Navbar.Link className='mt-2' href="#contact">{t('nav_ct')}</Navbar.Link>
+                <Navbar.Link className='mt-2' href="https://admin.alzainmhc.com">{t('nav_log')}</Navbar.Link>
                 <Dropdown label="" inline renderTrigger={() => (
                     <div className='flex mt-3 cursor-pointer text-black dark:text-gray-100'>
                         <span><Icon icon="heroicons:language-solid" className='text-lg' /></span>

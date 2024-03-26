@@ -44,7 +44,7 @@ const User = sequelize.define('users', {
     default: 0
   },
 });
-const Materials = sequelize.define('materials', {
+const materials = sequelize.define('materials', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -97,16 +97,16 @@ const Materials = sequelize.define('materials', {
     field: 'updated_at'
   }
 });
-Materials.belongsTo(Materials, { as: 'parent' });
-Materials.hasMany(Materials, { as: 'children', foreignKey: 'parentId' });
-Materials.beforeCreate((material, options) => {
+materials.belongsTo(materials, { as: 'parent' });
+materials.hasMany(materials, { as: 'children', foreignKey: 'parentId' });
+materials.beforeCreate((material, options) => {
   if (!material.hasOwnProperty('parentId')) {
     if (!material.parentId)
       material.parentId = null;
   }
 });
-User.hasMany(Materials, { foreignKey: 'user_id' }); // A user can have many materials
-Materials.belongsTo(User, { foreignKey: 'user_id' }); // A material belongs to one user
+User.hasMany(materials, { foreignKey: 'user_id' }); // A user can have many materials
+materials.belongsTo(User, { foreignKey: 'user_id' }); // A material belongs to one user
 const Purchases = sequelize.define('purchases', {
   id: {
     type: DataTypes.INTEGER,
@@ -160,10 +160,10 @@ const Visitor = sequelize.define('visitor', {
   },
 });
 
-Sells.belongsTo(Materials, { foreignKey: 'materialId' });
-Purchases.belongsTo(Materials);
+Sells.belongsTo(materials, { foreignKey: 'materialId' });
+Purchases.belongsTo(materials);
 Purchases.belongsTo(User, { foreignKey: 'userId' });
-Sells.belongsTo(Materials);
+Sells.belongsTo(materials);
 Sells.belongsTo(User, { foreignKey: 'userId' });
 
 (async () => {
@@ -174,4 +174,4 @@ Sells.belongsTo(User, { foreignKey: 'userId' });
   } catch (e) { console.log('eeror whiel sycncing...', e) }
 })()
 
-module.exports = { User, Materials, Purchases, Sells, Visitor };
+module.exports = { User, materials, Purchases, Sells, Visitor };

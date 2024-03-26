@@ -1,5 +1,5 @@
 const configDotenv = require("dotenv").configDotenv;
-const { Materials, Purchases, Sells, User, Visitor } = require("./libs/models.js");
+const { materials, Purchases, Sells, User, Visitor } = require("./libs/models.js");
 const express = require("express");
 const Sequelize = require("sequelize");
 const bcrypt = require("bcryptjs");
@@ -13,7 +13,9 @@ const circularJSON = require('circular-json');
 configDotenv()
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://admin.alzainmhc.com'
+}));
 
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -22,16 +24,7 @@ app.use(bodyParser.json())
 app.get('/api/search/materials', async (req, res) => {
     const { query } = req.query;
     try {
-        const materials = await Materials.findAll({
-            // where: Sequelize.where(
-            //     Sequelize.fn('lower', Sequelize.col('id')),
-            //     'like',
-            //     Sequelize.fn('lower', `%${query}%`)
-            // ).or(Sequelize.where(
-            //     Sequelize.fn('lower', Sequelize.col('name')),
-            //     'like',
-            //     Sequelize.fn('lower', `%${query}%`)
-            // )),
+        const materials = await materials.findAll({
             where: {
                 [Sequelize.Op.or]: [
                     { id: query },
@@ -59,7 +52,7 @@ app.post('/api/purchases/new', async (req, res) => {
             if (!exist) {
                 return res.status(404).json({ message: 'Purchase record not found' });
             }
-            let mat = await Materials.findByPk(MaterialId)
+            let mat = await materials.findByPk(MaterialId)
             let matC = mat.totalPurchases - exist.quantity
             matC += quantity
             await mat.update({
@@ -85,7 +78,7 @@ app.post('/api/purchases/new', async (req, res) => {
                 quantity,
                 MaterialId,
             });
-            let mat = await Materials.findByPk(MaterialId)
+            let mat = await materials.findByPk(MaterialId)
             let matC = mat.totalPurchases + quantity
             await mat.update({
                 totalPurchases: matC
@@ -131,7 +124,7 @@ app.post('/api/sells/new', async (req, res) => {
                 return res.status(404).json({ message: 'Sell record not found' });
             }
 
-            let mat = await Materials.findByPk(MaterialId)
+            let mat = await materials.findByPk(MaterialId)
             let matC = mat.totalSells - exist.quantity
             matC += quantity
             await mat.update({
@@ -164,7 +157,7 @@ app.post('/api/sells/new', async (req, res) => {
             await usr.update({
                 sellings: usrC
             })
-            let mat = await Materials.findByPk(MaterialId)
+            let mat = await materials.findByPk(MaterialId)
             let matC = mat.totalSells + quantity
             await mat.update({
                 totalSells: matC
@@ -177,29 +170,29 @@ app.post('/api/sells/new', async (req, res) => {
     }
 });
 
-const getMaterials = async (query) => {
+const getmaterials = async (query) => {
     let pm = {
         parentId: null
     }
     let mc = {
-        parent_id: Sequelize.col('Materials.id')
+        parent_id: Sequelize.col('materials.id')
     }
     if (query.asAdmin === 'false' || query.asAdmin === false) {
         pm.user_id = query.id
         mc.user_id = query.id
     }
-    const [parentMaterials, materialsWithChildren] = await Promise.all([
-        Materials.findAll({
+    const [parentmaterials, materialsWithChildren] = await Promise.all([
+        materials.findAll({
             where: pm,
             ttributes: ['name', 'id']
         }),
-        Materials.findAll({
+        materials.findAll({
             include: {
-                model: Materials,
+                model: materials,
                 as: 'children',
                 where: mc,
                 include: [
-                    { model: Materials, where: mc, as: 'children', attributes: ['id', 'name'] },
+                    { model: materials, where: mc, as: 'children', attributes: ['id', 'name'] },
                 ],
                 attributes: ['id', 'name']
             },
@@ -207,7 +200,7 @@ const getMaterials = async (query) => {
             attributes: ['id', 'name']
         }),
     ]);
-    const allMaterials = parentMaterials.reduce((acc, parentMaterial) => {
+    const allmaterials = parentmaterials.reduce((acc, parentMaterial) => {
         const existingMaterial = materialsWithChildren.find(m => m.id === parentMaterial.id);
         if (existingMaterial) {
             acc.push({ ...parentMaterial.toJSON(), ...existingMaterial.toJSON() }); // Combine properties
@@ -216,7 +209,7 @@ const getMaterials = async (query) => {
         }
         return acc;
     }, []);
-    return allMaterials
+    return allmaterials
 }
 
 app.get('/api/purchases/all/:id/:asAdmin', async (req, res) => {
@@ -228,7 +221,7 @@ app.get('/api/purchases/all/:id/:asAdmin', async (req, res) => {
                     attributes: ['id', 'username', 'fullname', 'email', 'avatar']
                 },
                 {
-                    model: Materials,
+                    model: materials,
                     attributes: ['name'],
                 },
             ],
@@ -238,7 +231,7 @@ app.get('/api/purchases/all/:id/:asAdmin', async (req, res) => {
             order: [['id', 'DESC']],
             limit: 30,
         });
-        res.send({ items, materials: circularJSON.stringify(await getMaterials(req.params)) })
+        res.send({ items, materials: circularJSON.stringify(await getmaterials(req.params)) })
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching users' });
@@ -254,7 +247,7 @@ app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
                     attributes: ['id', 'username', 'fullname', 'email', 'avatar']
                 },
                 {
-                    model: Materials,
+                    model: materials,
                     attributes: ['name'],
                     as: 'material'
                 },
@@ -265,7 +258,7 @@ app.get('/api/sells/all/:id/:asAdmin', async (req, res) => {
             order: [['id', 'DESC']],
             limit: 30,
         });
-        res.send({ sells, materials: circularJSON.stringify(await getMaterials(req.params)) })
+        res.send({ sells, materials: circularJSON.stringify(await getmaterials(req.params)) })
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching Sells', error: error });
@@ -290,7 +283,7 @@ app.delete('/api/materials/:id/delete', async (req, res) => {
     try {
         const materialId = req.params.id;
         console.log('() => ', req.params)
-        const deletedMaterial = await Materials.destroy({
+        const deletedMaterial = await materials.destroy({
             where: { id: materialId },
         });
         if (deletedMaterial === 0) {
@@ -307,7 +300,7 @@ app.post('/api/materials/new', async (req, res) => {
     try {
         const { name, description, price, quantity, user_id, parent_id, id } = req.body;
         if (id) {
-            const existingMaterial = await Materials.findByPk(id);
+            const existingMaterial = await materials.findByPk(id);
             if (!existingMaterial) {
                 return res.status(404).json({ message: 'Material not found' });
             }
@@ -321,7 +314,7 @@ app.post('/api/materials/new', async (req, res) => {
             });
             res.json({ message: 'Material updated successfully', material: existingMaterial });
         } else {
-            const newMaterial = await Materials.create({
+            const newMaterial = await materials.create({
                 user_id,
                 name,
                 description,
@@ -339,14 +332,14 @@ app.post('/api/materials/new', async (req, res) => {
 
 app.get('/api/materials/all/:id/:asAdmin', async (req, res) => {
     try {
-        const all = await Materials.findAll({
+        const all = await materials.findAll({
             include: [
                 {
                     model: User,
                     attributes: ['id', 'username', 'fullname', 'email', 'avatar']
                 },
                 {
-                    model: Materials,
+                    model: materials,
                     as: 'parent',
                     attributes: ['name'],
                 },
@@ -401,7 +394,7 @@ app.get('/api/users/:id/delete', async (req, res) => {
             cascade: true,
         });
         if (userToDelete.avatar != '') {
-            let p = process.env.BASE_FOLDER + userToDelete.avatar;
+            let p = '/home/alzainmh/admin.alzainmhc.com' + userToDelete.avatar;
             if (userToDelete.avatar && existsSync(p)) {
                 unlinkSync(p)
             }
@@ -465,7 +458,7 @@ app.get('/api/users/all', async (req, res) => {
 const upload = multer({ storage: storage })
 app.post('/api/new-user', upload.single('avatar'), async (req, res) => {
     const { asAdmin, username, fullname, email, address, password, update, old_username, old_email, id } = req.body;
-    const avatarFile = req.file ? process.env.RELATIVE_IMAGE_FILE_PATH + req.file.filename : '';
+    const avatarFile = req.file ? '/media/images/' + req.file.filename : '';
     let validate = null;
     if (username !== old_username) {
         const existingUsername = await User.findOne({ where: { username } });
@@ -477,7 +470,7 @@ app.post('/api/new-user', upload.single('avatar'), async (req, res) => {
     }
     if (validate) {
         if (avatarFile != '')
-            unlinkSync(process.env.BASE_FOLDER + process.env.RELATIVE_IMAGE_FILE_PATH + req.file.filename)
+            unlinkSync('/home/alzainmh/admin.alzainmhc.com/media/images/' + req.file.filename)
         return res.status(400).json({ message: validate });
     };
     try {
@@ -582,13 +575,13 @@ app.get('/api/count/materials/top-materials', async (req, res) => {
     if (req.query.asAdmin === 'false' || req.query.asAdmin === false) {
         where.user_id = req.query.id
     }
-    const sells = await Materials.findAll({
+    const sells = await materials.findAll({
         attributes: ['name', 'totalSells'],
         order: [[Sequelize.col('totalSells'), 'DESC']],
         limit: 10,
         where
     });
-    const purchased = await Materials.findAll({
+    const purchased = await materials.findAll({
         attributes: ['name', 'totalPurchases'],
         order: [[Sequelize.col('totalPurchases'), 'DESC']],
         limit: 10,

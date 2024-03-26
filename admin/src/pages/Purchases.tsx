@@ -141,7 +141,7 @@ export default () => {
                                     {item.id}
                                 </td>
                                 <td className="px-6 py-4">
-                                    {item.Material.name}
+                                    {item.material ? item.material.name : ''}
                                 </td>
                                 <td className="px-6 py-4">
                                     ${item.purchasePrice}
@@ -150,21 +150,21 @@ export default () => {
                                     {item.quantity}
                                 </td>
                                 <th scope="row" className="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white">
-                                    {item.avatar && item.avatar && item.avatar != '' ?
-                                        <img className="w-8 h-8 rounded-full" src={item.User.avatar} alt="Neil image" />
+                                    {item.user && item.user.avatar && item.user.avatar != '' ?
+                                        <img className="w-8 h-8 rounded-full" src={item.user.avatar} alt="Neil image" />
                                         :
                                         <span className="user-txt-name" style={{
                                             backgroundColor: getRandomColor(.7)
                                         }}>
-                                            {setUserCharName(item.User.fullname)}
+                                            {setUserCharName(item.User && item.user.fullname ? item.user.fullname : 'USER')}
                                         </span>
                                     }
                                     <div className="ps-3">
                                         <div className="text-base font-semibold">
-                                            {item.User.fullname}
-                                            <span className="ml-2 font-normal text-gray-500">@{item.User.username}</span>
+                                            {item.user.fullname}
+                                            <span className="ml-2 font-normal text-gray-500">@{item.user.username}</span>
                                         </div>
-                                        <div className="font-normal text-gray-500">{item.User.email}</div>
+                                        <div className="font-normal text-gray-500">{item.user.email}</div>
                                     </div>
                                 </th>
                                 <td className="px-6 py-4">
